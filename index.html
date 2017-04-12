@@ -9,7 +9,8 @@
     <style type="text/css">
         select {
             width: 100%;
-            height: 100%
+            height: 100%;
+            min-height: 260px
         }
         
         option:nth-child(even) {
@@ -59,12 +60,14 @@
     <div class="ports">
         <div class="off-list">
             <p>Off ports</p>
-            <select name="offs" id="offs" multiple="multiple" size="15" onclick="changeState(event);">
+            <!--<select name="offs[]" id="offs" multiple="multiple" size="15" onclick="changeState(event);">-->
+            <select name="offs[]" id="offs" multiple="multiple" size="15">
         </select>
         </div>
         <div class="on-list">
             <p>On ports</p>
-            <select name="ons" id="ons" multiple="multiple" size="15" onclick="changeState(event);">
+            <!--<select name="ons[]" id="ons" multiple="multiple" size="15" onclick="changeState(event);">-->
+            <select name="ons[]" id="ons" multiple="multiple" size="15">
         
             </select>
         </div>
@@ -72,85 +75,103 @@
     <img src='./omega_pinout.png' />
 
     <script type="text/javascript">
-            function sendAjax(obj) {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', '/doMagic');
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        console.log(xhr.responseText);
-                    } else if(xhr.status !== 200) {
-                        console.log('Request failed. Returned status: ', xhr.status); 
+        // pins from manual [0, 1, 6, 7, 8, 12, 13, 14, 15, 16, 17, 18, 19, 23, 26]
+        // TODO: to be taken from backend
+        var portsOff = [0, 1, 6, 7, 8, 12, 13, 14, 18, 19, 20, 21, 23, 26];
+        var portsOn = [];
+        populateSelects('offs', portsOff);
+        populateSelects('ons', portsOn);
+
+        function populateSelects(selectId, ports) {
+            var sel = document.getElementById(selectId);
+            for (var i = 0; i < ports.length; i++) {
+                var opt = document.createElement('option');
+                opt.innerHTML = ports[i];
+                opt.value = ports[i];
+                sel.appendChild(opt);
+            }
+        }
+
+        (function () {
+            var offList = document.getElementById('offs');
+            var onList = document.getElementById('ons');
+
+            offList.onchange = function (e) {
+                getSelectedOptions(this, onList, changeState);
+            };
+
+            onList.onchange = function (e) {
+                getSelectedOptions(this, offList, changeState);
+            };
+
+            function getSelectedOptions(selectingBox, otherBox, callbackFn) {
+                var selOptions = [], opt;
+                for (var i = 0, len = selectingBox.options.length; i < len; i++) {
+                    opt = selectingBox.options[i];
+                    if (opt.selected) {
+                        selOptions.push(opt); // or parseInt(opt.value)
                     }
                 }
-                xhr.send(JSON.stringify(obj));
+                if (callbackFn) {
+                    callbackFn(selectingBox, otherBox, selOptions);
+                }
+                return true;
             }
 
-            function changeState(event) {
-                var selectingBox = event.target.parentNode;
-                var otherBox;
-                if (selectingBox.attributes[1].nodeValue === 'offs') {
-                    otherBox = document.getElementById('ons')
-                } else {
-                    otherBox = document.getElementById('offs')
-                }
-                var selectedValue = selectingBox.options[selectingBox.selectedIndex].value;
+            function changeState(selectingBox, otherBox, selOptions) {
+            selOptions.forEach(function(opt, index) {
                 selectingBox.remove(selectingBox.selectedIndex);
+                otherBox.options.add(opt, index);
+            });
+            
+            sortSelect(otherBox);
+            otherBox.selectedIndex = -1;
+            
+            var allOff = getItemsAsArray(selectingBox);
+            var allOn = getItemsAsArray(otherBox);
 
-                var newOptionToBeInserted = document.createElement("option");
-                newOptionToBeInserted.value = selectedValue;
-                newOptionToBeInserted.text = selectedValue;
+            sendAjax({ 'allOff': allOff, 'allOn': allOn });
+        }
 
-                otherBox.options.add(newOptionToBeInserted, 0);
-                sortSelect(otherBox);
-                var allOff = getItemsAsArray(selectingBox);
-                var allOn = getItemsAsArray(otherBox);
-                console.log('items: ', allOff, allOn);
-
-                sendAjax({ 'allOff': allOff, 'allOn': allOn });
+        function sortSelect(otherBox) {
+            var tmpAry = [];
+            for (var i = 0; i < otherBox.options.length; i++) {
+                tmpAry.push(otherBox.options[i]);
             }
+            tmpAry.sort(function (a, b) {
+                return (parseInt(a.value) < parseInt(b.value)) ? -1 : 1;
+            });
+            for (var i = 0; i < tmpAry.length; i++) {
+                otherBox.options[i] = tmpAry[i];
+            }
+            return;
+        }
 
-            function populateSelects(selectId, ports) {
-                var sel = document.getElementById(selectId);
-                for (var i = 0; i < ports.length; i++) {
-                    var opt = document.createElement('option');
-                    opt.innerHTML = ports[i];
-                    opt.value = ports[i];
-                    sel.appendChild(opt);
+        function getItemsAsArray(elem) {
+            var tmpAry = [];
+            for (var i = 0; i < elem.options.length; i++) {
+                tmpAry.push(parseInt(elem.options[i].value));
+            }
+            return tmpAry;
+        }
+
+        function sendAjax(obj) {
+            console.log('obj', JSON.stringify(obj));
+            // return ;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/doMagic');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    console.log(xhr.responseText);
+                } else if (xhr.status !== 200) {
+                    console.log('Request failed. Returned status: ', xhr.status);
                 }
             }
-
-            function sortSelect(elem) {
-                var tmpAry = [];
-                for (var i = 0; i < elem.options.length; i++) {
-                    tmpAry.push(elem.options[i]);
-                }
-                tmpAry.sort(function (a, b) {
-                    return (parseInt(a.value) < parseInt(b.value)) ? -1 : 1;
-                });
-                // while (elem.options.length > 0) {
-                //     elem.options[0] = null;
-                // }
-                for (var i = 0; i < tmpAry.length; i++) {
-                    elem.options[i] = tmpAry[i];
-                }
-                return;
-            }
-
-            function getItemsAsArray(elem) {
-                var tmpAry = [];
-                for (var i = 0; i < elem.options.length; i++) {
-                    tmpAry.push(parseInt(elem.options[i].value));
-                }
-                return tmpAry;
-            }
-
-            // var portsOff = [0, 1, 6, 7, 8, 12, 13, 14, 15, 16, 17, 18, 19, 23, 26];
-            var portsOff = [0, 1, 6, 7, 8, 12, 13, 14, 18, 19, 20, 21, 23, 26];
-            populateSelects('offs', portsOff);
-            var portsOn = [];
-            populateSelects('ons', portsOn);
+            xhr.send(JSON.stringify(obj));
+        }
+        }());
     </script>
 </body>
-
 </html>

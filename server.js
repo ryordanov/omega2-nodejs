@@ -91,6 +91,4 @@ function letThereBeLight(OnOffObject) {
     });        
 }
 
-
-// https://groups.google.com/forum/#!topic/nodejs/AwiBZcRzHEY
 // https://github.com/ajlopez/NodeSamples/blob/master/WebServer/server4.js
