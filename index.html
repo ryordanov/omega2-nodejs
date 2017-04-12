@@ -92,10 +92,17 @@
             }
         }
 
-        // multiselect:
         (function () {
             var offList = document.getElementById('offs');
             var onList = document.getElementById('ons');
+
+            offList.onchange = function (e) {
+                getSelectedOptions(this, onList, changeState);
+            };
+
+            onList.onchange = function (e) {
+                getSelectedOptions(this, offList, changeState);
+            };
 
             function getSelectedOptions(selectingBox, otherBox, callbackFn) {
                 var selOptions = [], opt;
@@ -111,16 +118,7 @@
                 return true;
             }
 
-            offList.onchange = function (e) {
-                getSelectedOptions(this, onList, changeState);
-            };
-
-            onList.onchange = function (e) {
-                getSelectedOptions(this, offList, changeState);
-            };
-        }());
-
-        function changeState(selectingBox, otherBox, selOptions) {
+            function changeState(selectingBox, otherBox, selOptions) {
             selOptions.forEach(function(opt, index) {
                 selectingBox.remove(selectingBox.selectedIndex);
                 otherBox.options.add(opt, index);
@@ -143,9 +141,6 @@
             tmpAry.sort(function (a, b) {
                 return (parseInt(a.value) < parseInt(b.value)) ? -1 : 1;
             });
-            // while (otherBox.options.length > 0) {
-            //     otherBox.options[0] = null;
-            // }
             for (var i = 0; i < tmpAry.length; i++) {
                 otherBox.options[i] = tmpAry[i];
             }
@@ -162,7 +157,7 @@
 
         function sendAjax(obj) {
             console.log('obj', JSON.stringify(obj));
-            return ;
+            // return ;
 
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/doMagic');
@@ -176,6 +171,7 @@
             }
             xhr.send(JSON.stringify(obj));
         }
+        }());
     </script>
 </body>
 </html>
