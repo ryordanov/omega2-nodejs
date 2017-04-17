@@ -119,8 +119,13 @@
                 sortSelect(otherBox);
                 otherBox.selectedIndex = -1;
 
-                var allOff = getItemsAsArray(selectingBox);
-                var allOn = getItemsAsArray(otherBox);
+                if (selectingBox.attributes[1].nodeValue === 'offs') {
+                    var allOff = getItemsAsArray(selectingBox);
+                    var allOn = getItemsAsArray(otherBox);
+                } else {
+                	var allOff = getItemsAsArray(otherBox);
+                	var allOn = getItemsAsArray(selectingBox);
+                }
 
                 sendAjax({ 'allOff': allOff, 'allOn': allOn });
             }
