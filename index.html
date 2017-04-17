@@ -60,13 +60,11 @@
     <div class="ports">
         <div class="off-list">
             <p>Off ports</p>
-            <!--<select name="offs[]" id="offs" multiple="multiple" size="15" onclick="changeState(event);">-->
             <select name="offs[]" id="offs" multiple="multiple" size="15">
         </select>
         </div>
         <div class="on-list">
             <p>On ports</p>
-            <!--<select name="ons[]" id="ons" multiple="multiple" size="15" onclick="changeState(event);">-->
             <select name="ons[]" id="ons" multiple="multiple" size="15">
         
             </select>
@@ -97,81 +95,76 @@
             var onList = document.getElementById('ons');
 
             offList.onchange = function (e) {
-                getSelectedOptions(this, onList, changeState);
+                changeState(this, onList);
             };
 
             onList.onchange = function (e) {
-                getSelectedOptions(this, offList, changeState);
+                changeState(this, offList);
             };
 
-            function getSelectedOptions(selectingBox, otherBox, callbackFn) {
-                var selOptions = [], opt;
-                for (var i = 0, len = selectingBox.options.length; i < len; i++) {
-                    opt = selectingBox.options[i];
-                    if (opt.selected) {
-                        selOptions.push(opt); // or parseInt(opt.value)
+            function changeState(selectingBox, otherBox) {
+                var selectedItems = Array.prototype.filter.apply(
+                    selectingBox.options, [
+                        function(o) {
+                            return o.selected;
+                            }
+                        ]
+                    );
+
+                    for (key in selectedItems) {
+                        selectingBox.remove(selectingBox.selectedIndex);
+                        otherBox.options.add(selectedItems[key], 0);
+                    };
+                    
+                sortSelect(otherBox);
+                otherBox.selectedIndex = -1;
+
+                var allOff = getItemsAsArray(selectingBox);
+                var allOn = getItemsAsArray(otherBox);
+
+                sendAjax({ 'allOff': allOff, 'allOn': allOn });
+            }
+
+            function sortSelect(otherBox) {
+                var tmpAry = [];
+                for (var i = 0; i < otherBox.options.length; i++) {
+                    tmpAry.push(otherBox.options[i]);
+                }
+                tmpAry.sort(function (a, b) {
+                    return (parseInt(a.value) < parseInt(b.value)) ? -1 : 1;
+                });
+                for (var i = 0; i < tmpAry.length; i++) {
+                    otherBox.options[i] = tmpAry[i];
+                }
+                return;
+            }
+
+            function getItemsAsArray(elem) {
+                var tmpAry = [];
+                for (var i = 0; i < elem.options.length; i++) {
+                    tmpAry.push(parseInt(elem.options[i].value));
+                }
+                return tmpAry;
+            }
+
+            function sendAjax(obj) {
+                // console.log('obj', JSON.stringify(obj));
+                // return;
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/doMagic');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        console.log(xhr.responseText);
+                    } else if (xhr.status !== 200) {
+                        console.log('Request failed. Returned status: ', xhr.status);
                     }
                 }
-                if (callbackFn) {
-                    callbackFn(selectingBox, otherBox, selOptions);
-                }
-                return true;
+                xhr.send(JSON.stringify(obj));
             }
-
-            function changeState(selectingBox, otherBox, selOptions) {
-            selOptions.forEach(function(opt, index) {
-                selectingBox.remove(selectingBox.selectedIndex);
-                otherBox.options.add(opt, index);
-            });
-            
-            sortSelect(otherBox);
-            otherBox.selectedIndex = -1;
-            
-            var allOff = getItemsAsArray(selectingBox);
-            var allOn = getItemsAsArray(otherBox);
-
-            sendAjax({ 'allOff': allOff, 'allOn': allOn });
-        }
-
-        function sortSelect(otherBox) {
-            var tmpAry = [];
-            for (var i = 0; i < otherBox.options.length; i++) {
-                tmpAry.push(otherBox.options[i]);
-            }
-            tmpAry.sort(function (a, b) {
-                return (parseInt(a.value) < parseInt(b.value)) ? -1 : 1;
-            });
-            for (var i = 0; i < tmpAry.length; i++) {
-                otherBox.options[i] = tmpAry[i];
-            }
-            return;
-        }
-
-        function getItemsAsArray(elem) {
-            var tmpAry = [];
-            for (var i = 0; i < elem.options.length; i++) {
-                tmpAry.push(parseInt(elem.options[i].value));
-            }
-            return tmpAry;
-        }
-
-        function sendAjax(obj) {
-            console.log('obj', JSON.stringify(obj));
-            // return ;
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/doMagic');
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    console.log(xhr.responseText);
-                } else if (xhr.status !== 200) {
-                    console.log('Request failed. Returned status: ', xhr.status);
-                }
-            }
-            xhr.send(JSON.stringify(obj));
-        }
         }());
     </script>
 </body>
+
 </html>
