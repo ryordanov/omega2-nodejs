@@ -93,28 +93,57 @@
         (function () {
             var offList = document.getElementById('offs');
             var onList = document.getElementById('ons');
+            var selectedItems = [];
+            var selBox = {};
+            var othrBox = {};
 
-            offList.onchange = function (e) {
-                changeState(this, onList);
+            offList.onmouseup = function (e) {
+                selectedItems = getSelectedItems(this);                
+                if (e.ctrlKey) {
+                    selBox = this;
+                    othrBox = onList;                    
+                } else {
+                    changeState(this, onList);
+                }
             };
 
-            onList.onchange = function (e) {
-                changeState(this, offList);
+            onList.onmouseup = function (e) {
+                selectedItems = getSelectedItems(this);
+                if (e.ctrlKey) {
+                    selBox = this;
+                    othrBox = offList;                    
+                } else {
+                    changeState(this, offList);
+                }
             };
 
-            function changeState(selectingBox, otherBox) {
-                var selectedItems = Array.prototype.filter.apply(
+            offList.onkeyup = function(e) {
+                if (e.key === 'Control') {
+                    changeState(selBox, othrBox);
+                }
+            }
+
+            onList.onkeyup = function(e) {
+                if (e.key === 'Control') {
+                    changeState(selBox, othrBox);
+                }
+            }
+
+            function getSelectedItems(selectingBox) {
+                return Array.prototype.filter.apply(
                     selectingBox.options, [
                         function(o) {
                             return o.selected;
                             }
                         ]
-                    );
+                );
+            }
 
-                    for (key in selectedItems) {
-                        selectingBox.remove(selectingBox.selectedIndex);
-                        otherBox.options.add(selectedItems[key], 0);
-                    };
+            function changeState(selectingBox, otherBox) {
+                for (key in selectedItems) {
+                    selectingBox.remove(selectingBox.selectedIndex);
+                    otherBox.options.add(selectedItems[key], 0);
+                };
                     
                 sortSelect(otherBox);
                 otherBox.selectedIndex = -1;
@@ -153,7 +182,7 @@
             }
 
             function sendAjax(obj) {
-                // console.log('obj', JSON.stringify(obj));
+                console.log('obj', JSON.stringify(obj));
                 // return;
 
                 var xhr = new XMLHttpRequest();
