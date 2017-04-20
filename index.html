@@ -74,7 +74,7 @@
 
     <script type="text/javascript">
         // pins from manual [0, 1, 6, 7, 8, 12, 13, 14, 15, 16, 17, 18, 19, 23, 26]
-        // TODO: to be taken from backend
+        // TODO: to be taken from backend or to avoid extra request and stay in index.html
         var portsOff = [0, 1, 6, 7, 8, 12, 13, 14, 18, 19, 20, 21, 23, 26];
         var portsOn = [];
         populateSelects('offs', portsOff);
@@ -118,13 +118,13 @@
             };
 
             offList.onkeyup = function(e) {
-                if (e.key === 'Control') {
+                if (e.key === 'Control' && Object.getOwnPropertyNames(selBox).length > 0) {
                     changeState(selBox, othrBox);
                 }
             }
 
             onList.onkeyup = function(e) {
-                if (e.key === 'Control') {
+                if (e.key === 'Control' && Object.getOwnPropertyNames(selBox).length > 0) {
                     changeState(selBox, othrBox);
                 }
             }
